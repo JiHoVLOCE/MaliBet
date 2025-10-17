@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BetSim - Apostas de Pontos</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #0a0a23, #1a1a40);
+      color: #fff;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background: #14143a;
+      padding: 20px;
+      font-size: 24px;
+      font-weight: bold;
+      letter-spacing: 2px;
+    }
+
+    main {
+      margin: 20px;
+    }
+
+    button {
+      background: #3f3fff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 20px;
+      margin: 10px;
+      cursor: pointer;
+      transition: 0.2s;
+      font-size: 16px;
+    }
+
+    button:hover {
+      background: #5656ff;
+    }
+
+    .profile-card {
+      background: #1f1f4a;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 15px auto;
+      max-width: 400px;
+      box-shadow: 0 0 10px #0005;
+    }
+
+    .medal {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 26px;
+      color: white;
+      margin: 0 auto 10px;
+      font-weight: bold;
+      box-shadow: 0 0 10px #0008;
+    }
+
+    .bronze { background: linear-gradient(145deg, #a97142, #c58a5d); }
+    .silver { background: linear-gradient(145deg, #b9b9b9, #e0e0e0); color: #222; }
+    .gold { background: linear-gradient(145deg, #ffd700, #ffb700); color: #222; }
+    .platinum { background: linear-gradient(145deg, #88e0e0, #c0f0ff); color: #111; }
+    .diamond { background: linear-gradient(145deg, #00c6ff, #0072ff); }
+
+    .game-card {
+      background: #1f1f4a;
+      border-radius: 10px;
+      padding: 20px;
+      margin: 15px auto;
+      max-width: 400px;
+      box-shadow: 0 0 10px #0005;
+    }
+
+    .result {
+      font-size: 18px;
+      margin-top: 10px;
+      color: #ffd700;
+    }
+
+    footer {
+      margin-top: 30px;
+      font-size: 14px;
+      color: #aaa;
+    }
+
+    input[type="text"], input[type="number"] {
+      padding: 8px;
+      border-radius: 6px;
+      border: none;
+      outline: none;
+      margin-top: 8px;
+      font-size: 14px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <header>🏆 BetSim - Apostas de Pontos</header>
+
+  <main>
+    <div class="profile-card" id="profileSection">
+      <h2 id="playerNameDisplay">Bem-vindo!</h2>
+      <div id="medalDisplay" class="medal bronze">1</div>
+      <p>Nível: <span id="level">1</span> | XP: <span id="xp">0</span> / <span id="nextXp">100</span></p>
+      <p>Pontos: <span id="points">0</span></p>
+      <div id="nameInputArea">
+        <input type="text" id="playerName" placeholder="Digite seu nome">
+        <button onclick="saveName()">Salvar Nome</button>
+      </div>
+    </div>
+
+    <button id="earnBtn">Ganhar pontos</button>
+
+    <div class="game-card">
+      <h3>🎲 Jogo da Moeda</h3>
+      <p>Aposte 10 pontos. Se der cara, você ganha 20!</p>
+      <button onclick="coinFlip()">Apostar</button>
+      <div class="result" id="coinResult"></div>
+    </div>
+
+    <div class="game-card">
+      <h3>🎯 Jogo do Número</h3>
+      <p>Aposte 20 pontos. Acerte o número (1 a 3) e ganhe 60!</p>
+      <input type="number" id="guessInput" min="1" max="3" placeholder="Digite 1 a 3">
+      <button onclick="numberGuess()">Apostar</button>
+      <div class="result" id="guessResult"></div>
+    </div>
+
+    <div class="game-card">
+      <h3>💥 Roleta Simples</h3>
+      <p>Aposte 50 pontos. Chance de 1 em 3 de ganhar 150!</p>
+      <button onclick="roulette()">Girar</button>
+      <div class="result" id="rouletteResult"></div>
+    </div>
+  </main>
+
+  <footer>
+    <p>© 2025 BetSim - Apostas fictícias com pontos (sem dinheiro real).</p>
+  </footer>
+
+  <script>
+    let player = {
+      name: localStorage.getItem('playerName') || '',
+      points: parseInt(localStorage.getItem('points')) || 0,
+      xp: parseInt(localStorage.getItem('xp')) || 0,
+      level: parseInt(localStorage.getItem('level')) || 1
+    };
+
+    const pointsDisplay = document.getElementById('points');
+    const xpDisplay = document.getElementById('xp');
+    const nextXpDisplay = document.getElementById('nextXp');
+    const levelDisplay = document.getElementById('level');
+    const playerNameDisplay = document.getElementById('playerNameDisplay');
+    const medalDisplay = document.getElementById('medalDisplay');
+    const nameInputArea = document.getElementById('nameInputArea');
+
+    document.getElementById('earnBtn').addEventListener('click', () => {
+      player.points += 10;
+      gainXp(10);
+      updateDisplay();
+      saveData();
+    });
+
+    function saveName() {
+      const name = document.getElementById('playerName').value.trim();
+      if (name) {
+        player.name = name;
+        localStorage.setItem('playerName', name);
+        updateDisplay();
+      }
+    }
+
+    function gainXp(amount) {
+      player.xp += amount;
+      if (player.xp >= player.level * 100) {
+        player.xp = 0;
+        player.level++;
+        updateMedal();
+      }
+    }
+
+    function updateMedal() {
+      let medalClass = 'bronze';
+      if (player.level >= 3 && player.level < 5) medalClass = 'silver';
+      else if (player.level >= 5 && player.level < 8) medalClass = 'gold';
+      else if (player.level >= 8 && player.level < 12) medalClass = 'platinum';
+      else if (player.level >= 12) medalClass = 'diamond';
+
+      medalDisplay.className = `medal ${medalClass}`;
+      medalDisplay.textContent = player.level;
+    }
+
+    function updateDisplay() {
+      pointsDisplay.textContent = player.points;
+      xpDisplay.textContent = player.xp;
+      nextXpDisplay.textContent = player.level * 100;
+      levelDisplay.textContent = player.level;
+      updateMedal();
+
+      if (player.name) {
+        playerNameDisplay.textContent = player.name;
+        nameInputArea.style.display = 'none';
+      }
+    }
+
+    function saveData() {
+      localStorage.setItem('points', player.points);
+      localStorage.setItem('xp', player.xp);
+      localStorage.setItem('level', player.level);
+    }
+
+    // Jogos 🎮
+    function coinFlip() {
+      if (player.points < 10) return alert("Você precisa de pelo menos 10 pontos!");
+      player.points -= 10;
+      const result = Math.random() < 0.5 ? "cara" : "coroa";
+      if (result === "cara") {
+        player.points += 20;
+        document.getElementById("coinResult").textContent = "Deu cara! Você ganhou 20 pontos 🎉";
+        gainXp(15);
+      } else {
+        document.getElementById("coinResult").textContent = "Deu coroa! Você perdeu 😢";
+        gainXp(5);
+      }
+      updateDisplay();
+      saveData();
+    }
+
+    function numberGuess() {
+      const guess = parseInt(document.getElementById('guessInput').value);
+      if (isNaN(guess) || guess < 1 || guess > 3) return alert("Escolha um número de 1 a 3!");
+      if (player.points < 20) return alert("Você precisa de 20 pontos!");
+
+      player.points -= 20;
+      const correct = Math.floor(Math.random() * 3) + 1;
+      if (guess === correct) {
+        player.points += 60;
+        document.getElementById('guessResult').textContent = `Número ${correct}! Você acertou e ganhou 60 pontos 🎯`;
+        gainXp(25);
+      } else {
+        document.getElementById('guessResult').textContent = `Número ${correct}. Você errou 😢`;
+        gainXp(10);
+      }
+      updateDisplay();
+      saveData();
+    }
+
+    function roulette() {
+      if (player.points < 50) return alert("Você precisa de 50 pontos!");
+      player.points -= 50;
+      const chance = Math.floor(Math.random() * 3);
+      if (chance === 0) {
+        player.points += 150;
+        document.getElementById('rouletteResult').textContent = "🎉 Você ganhou 150 pontos!";
+        gainXp(40);
+      } else {
+        document.getElementById('rouletteResult').textContent = "😢 Você perdeu na roleta!";
+        gainXp(15);
+      }
+      updateDisplay();
+      saveData();
+    }
+
+    // Inicialização
+    updateDisplay();
+  </script>
+</body>
+</html>
